@@ -1,0 +1,24 @@
+# templates/NOTES.txt
+Thank you for installing {{ .Chart.Name }} (version: {{ .Chart.Version }})!
+
+Your Prisma Studio has been deployed with the following settings:
+  - Application name: {{ include "prisma-studio.fullname" . }}
+  - Replica count: {{ .Values.replicaCount }}
+  - Database host: {{ .Values.database.host.value | default "Using a secret reference" }}
+  - Database name: {{ .Values.database.name.value | default "Using a secret reference" }}
+
+To access Prisma Studio:
+
+1. Ensure your deployment is running:
+   kubectl get pods -n {{ .Release.Namespace }} -l "app.kubernetes.io/instance={{ .Release.Name }}"
+
+2. Port-forward the service to access Prisma Studio:
+   kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "prisma-studio.fullname" . }}-svc 5555:{{ .Values.service.port }}
+
+3. Access Prisma Studio in your browser:
+   http://localhost:5555
+
+4. To check logs:
+   kubectl logs -n {{ .Release.Namespace }} -l "app.kubernetes.io/instance={{ .Release.Name }}"
+
+For any issues or questions, please refer to the documentation.

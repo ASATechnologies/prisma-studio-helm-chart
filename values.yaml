@@ -1,0 +1,51 @@
+image:
+  repository: timothyjmiller/prisma-studio
+  tag: latest
+  pullPolicy: Always
+
+replicaCount: 2
+
+database:
+  type: postgresql
+  port: 5432
+
+  # # The Following Config accept this form. e.g for password. This applies for `host`, `user`, `name`, and `password`
+  # password:
+  #   value: ""
+  # Or we can specify the value from a secret
+  # password:
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: ""
+  #       key: ""
+  host:
+  user:
+  name:
+  password:
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 5555
+  protocol: TCP
+
+resources:
+  requests:
+    cpu: 20m
+    memory: 55M
+
+probes:
+  liveness:
+    path: /
+    initialDelaySeconds: 5
+    timeoutSeconds: 2
+    periodSeconds: 10
+    successThreshold: 1
+    failureThreshold: 3
+  readiness:
+    path: /
+    initialDelaySeconds: 2
+    timeoutSeconds: 2
+    periodSeconds: 5
+    successThreshold: 1
+    failureThreshold: 3

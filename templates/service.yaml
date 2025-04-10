@@ -1,0 +1,15 @@
+# templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "prisma-studio.fullname" . }}-svc
+  labels:
+    {{- include "prisma-studio.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+      protocol: {{ .Values.service.protocol }}
+  selector:
+    {{- include "prisma-studio.selectorLabels" . | nindent 4 }}

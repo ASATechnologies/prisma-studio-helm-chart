@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "prisma-studio.fullname" . }}
+  labels:
+    {{- include "prisma-studio.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "prisma-studio.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "prisma-studio.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.targetPort }}
+              protocol: {{ .Values.service.protocol }}
+          env:
+            - name: POSTGRES_DATABASE
+              {{- if .Values.database.name.valueFrom }}
+              valueFrom:
+                {{- toYaml .Values.database.name.valueFrom | nindent 16 }}
+              {{- else }}
+              value: {{ .Values.database.name.value | quote }}
+              {{- end }}
+            - name: DB_PORT
+              value: {{ .Values.database.port | quote }}
+            - name: DB_HOST
+              {{- if .Values.database.host.valueFrom }}
+              valueFrom:
+                {{- toYaml .Values.database.host.valueFrom | nindent 16 }}
+              {{- else }}
+              value: {{ .Values.database.host.value | quote }}
+              {{- end }}
+            - name: DB_USER
+              {{- if .Values.database.user.valueFrom }}
+              valueFrom:
+                {{- toYaml .Values.database.user.valueFrom | nindent 16 }}
+              {{- else }}
+              value: {{ .Values.database.user.value | quote }}
+              {{- end }}
+            - name: DB_PASS
+              {{- if .Values.database.password.valueFrom }}
+              valueFrom:
+                {{- toYaml .Values.database.password.valueFrom | nindent 16 }}
+              {{- else }}
+              value: {{ .Values.database.password.value | quote }}
+              {{- end }}
+            - name: POSTGRES_URL
+              value: "postgresql://$(DB_USER):$(DB_PASS)@$(DB_HOST):$(DB_PORT)/$(POSTGRES_DATABASE)?schema=public"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.probes.liveness.path }}
+              port: {{ .Values.service.targetPort }}
+              scheme: HTTP
+            initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.probes.liveness.timeoutSeconds }}
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+            successThreshold: {{ .Values.probes.liveness.successThreshold }}
+            failureThreshold: {{ .Values.probes.liveness.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.probes.readiness.path }}
+              port: {{ .Values.service.targetPort }}
+              scheme: HTTP
+            initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.probes.readiness.timeoutSeconds }}
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+            successThreshold: {{ .Values.probes.readiness.successThreshold }}
+            failureThreshold: {{ .Values.probes.readiness.failureThreshold }}

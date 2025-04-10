@@ -1,0 +1,13 @@
+# Chart.yaml
+apiVersion: v2
+name: prisma-studio
+description: A Helm chart for Prisma Studio
+type: application
+version: 0.1.0
+keywords:
+  - Prisma
+  - Prisma studio
+maintainers:
+  - name: ASA Technologies
+    email: dev@asaerp.com
+    url: asaerp.com
