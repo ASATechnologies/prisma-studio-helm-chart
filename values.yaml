@@ -3,16 +3,19 @@ image:
   tag: latest
   pullPolicy: Always
 
-replicaCount: 2
+replicaCount: 1
 
 database:
   type: postgresql
   port: 5432
 
-  # # The Following Config accept this form. e.g for password. This applies for `host`, `user`, `name`, and `password`
+  # The following configs accept the Container Env Spec form This applies for `host`, `user`, `name`, and `password`
+  # Using `password` as an example you can directly specify the value:
+
   # password:
   #   value: ""
-  # Or we can specify the value from a secret
+
+  # Or we can specify the value from a secret or other reference points
   # password:
   #   valueFrom:
   #     secretKeyRef:
@@ -25,7 +28,7 @@ database:
 
 service:
   type: ClusterIP
-  port: 80
+  port: 5555
   targetPort: 5555
   protocol: TCP
 

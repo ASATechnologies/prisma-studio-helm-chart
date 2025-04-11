@@ -10,26 +10,18 @@ This Helm chart deploys Prisma Studio in a Kubernetes cluster. Prisma Studio pro
 
 - Kubernetes 1.16+
 - Helm 3.0+
-- A PostgreSQL database accessible from your Kubernetes cluster
+- A database (currently only supports Postgresql) accessible from your Kubernetes cluster
 
 ## Installing the Chart
 
-Add the repository (if hosted):
-
 ```bash
-git clone  <this-repo>
+git clone https://github.com/ASATechnologies/prisma-studio-helm-chart.git
 ```
 
-To install the chart with the release name `prisma-studio`:
+To install the chart with the release name `my-release-name`:
 
 ```bash
-helm install prisma-studio my-repo/prisma-studio
-```
-
-Or from a local directory:
-
-```bash
-helm install prisma-studio ./prisma-studio
+helm install my-release-name ./prisma-studio-helm-chart -f my-db-values.yaml
 ```
 
 ## Configuration
@@ -43,8 +35,11 @@ The following table lists the configurable parameters of the Prisma Studio chart
 | `image.pullPolicy`            | Image pull policy                                   | `Always`                       |
 | `replicaCount`                | Number of replicas                                  | `2`                            |
 | `database.type`               | Database type                                       | `postgresql`                   |
+| `database.port`               | Database port                                       | `5432`                         |
 | `database.name.value`         | Database name                                       | `""`                           |
+| `database.name.valueFrom`     | Reference to database name                          | `{}`                           |
 | `database.host.value`         | Database host                                       | `""`                           |
+| `database.host.valueFrom`     | Reference to database host name                     | `{}`                           |
 | `database.user.value`         | Database username                                   | `""`                           |
 | `database.user.valueFrom`     | Reference to database username secret               | `{}`                           |
 | `database.password.value`     | Database password (not recommended - use valueFrom) | `""`                           |
@@ -136,7 +131,7 @@ helm install prisma-studio ./prisma-studio -f values-external-db.yaml
 After deploying, you can access Prisma Studio by port-forwarding the service:
 
 ```bash
-kubectl port-forward svc/prisma-studio-svc 5555:80
+kubectl port-forward svc/prisma-studio-svc 5555:5555
 ```
 
 Then open your browser at `http://localhost:5555`
