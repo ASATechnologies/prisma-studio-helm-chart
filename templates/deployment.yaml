@@ -53,7 +53,7 @@ spec:
               value: {{ .Values.database.password.value | quote }}
               {{- end }}
             - name: POSTGRES_URL
-              value: "postgresql://$(DB_USER):$(DB_PASS)@$(DB_HOST):$(DB_PORT)/$(POSTGRES_DATABASE)?schema=public"
+              value: "postgresql://$(DB_USER):$(DB_PASS)@$(DB_HOST):$(DB_PORT)/$(POSTGRES_DATABASE)?connect_timeout=20"
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           livenessProbe:
