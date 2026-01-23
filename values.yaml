@@ -25,6 +25,15 @@ database:
   user:
   name:
   password:
+    # Health check configuration
+  healthCheck:
+    enabled: true
+    image:
+      repository: postgres
+      tag: 14-alpine
+    connectTimeout: 20
+    retryInterval: 5
+    maxRetries: 12
 
 service:
   type: ClusterIP
@@ -40,15 +49,15 @@ resources:
 probes:
   liveness:
     path: /
-    initialDelaySeconds: 10
+    initialDelaySeconds: 5
     timeoutSeconds: 2
     periodSeconds: 10
     successThreshold: 1
     failureThreshold: 3
   readiness:
     path: /
-    initialDelaySeconds: 7
-    timeoutSeconds: 5
-    periodSeconds: 500
+    initialDelaySeconds: 2
+    timeoutSeconds: 2
+    periodSeconds: 5
     successThreshold: 1
     failureThreshold: 3

@@ -14,6 +14,65 @@ spec:
       labels:
         {{- include "prisma-studio.selectorLabels" . | nindent 8 }}
     spec:
+      {{- if .Values.database.healthCheck.enabled }}
+      initContainers:
+        - name: postgres-healthcheck
+          image: "{{ .Values.database.healthCheck.image.repository }}:{{ .Values.database.healthCheck.image.tag }}"
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              echo "Checking PostgreSQL connection..."
+              RETRY_COUNT=0
+              MAX_RETRIES={{ .Values.database.healthCheck.maxRetries }}
+              
+              while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+                if PGPASSWORD="${DB_PASS}" psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${POSTGRES_DATABASE}" -c "SELECT 1" > /dev/null 2>&1; then
+                  echo "✓ PostgreSQL connection successful"
+                  exit 0
+                else
+                  RETRY_COUNT=$((RETRY_COUNT + 1))
+                  echo "✗ PostgreSQL connection failed (attempt $RETRY_COUNT/$MAX_RETRIES)"
+                  if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                    echo "Retrying in {{ .Values.database.healthCheck.retryInterval }} seconds..."
+                    sleep {{ .Values.database.healthCheck.retryInterval }}
+                  fi
+                fi
+              done
+              
+              echo "Failed to connect to PostgreSQL after $MAX_RETRIES attempts"
+              exit 1
+          env:
+            - name: POSTGRES_DATABASE
+              {{- if .Values.database.name.valueFrom }}
+              valueFrom:
+                {{- toYaml .Values.database.name.valueFrom | nindent 16 }}
+              {{- else }}
+              value: {{ .Values.database.name.value | quote }}
+              {{- end }}
+            - name: DB_PORT
+              value: {{ .Values.database.port | quote }}
+            - name: DB_HOST
+              {{- if .Values.database.host.valueFrom }}
+              valueFrom:
+                {{- toYaml .Values.database.host.valueFrom | nindent 16 }}
+              {{- else }}
+              value: {{ .Values.database.host.value | quote }}
+              {{- end }}
+            - name: DB_USER
+              {{- if .Values.database.user.valueFrom }}
+              valueFrom:
+                {{- toYaml .Values.database.user.valueFrom | nindent 16 }}
+              {{- else }}
+              value: {{ .Values.database.user.value | quote }}
+              {{- end }}
+            - name: DB_PASS
+              {{- if .Values.database.password.valueFrom }}
+              valueFrom:
+                {{- toYaml .Values.database.password.valueFrom | nindent 16 }}
+              {{- else }}
+              value: {{ .Values.database.password.value | quote }}
+              {{- end }}
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -53,7 +112,7 @@ spec:
               value: {{ .Values.database.password.value | quote }}
               {{- end }}
             - name: POSTGRES_URL
-              value: "postgresql://$(DB_USER):$(DB_PASS)@$(DB_HOST):$(DB_PORT)/$(POSTGRES_DATABASE)?connect_timeout=20"
+              value: "postgresql://$(DB_USER):$(DB_PASS)@$(DB_HOST):$(DB_PORT)/$(POSTGRES_DATABASE)?connect_timeout={{ .Values.database.healthCheck.connectTimeout }}"
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           livenessProbe:
@@ -76,52 +135,3 @@ spec:
             periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
             successThreshold: {{ .Values.probes.readiness.successThreshold }}
             failureThreshold: {{ .Values.probes.readiness.failureThreshold }}
-        - name: postgres-healthcheck
-          image: postgres:14-alpine
-          command: ["/bin/sh"]
-          env:
-            - name: POSTGRES_DATABASE
-              {{- if .Values.database.name.valueFrom }}
-              valueFrom:
-                {{- toYaml .Values.database.name.valueFrom | nindent 16 }}
-              {{- else }}
-              value: {{ .Values.database.name.value | quote }}
-              {{- end }}
-            - name: DB_PORT
-              value: {{ .Values.database.port | quote }}
-            - name: DB_HOST
-              {{- if .Values.database.host.valueFrom }}
-              valueFrom:
-                {{- toYaml .Values.database.host.valueFrom | nindent 16 }}
-              {{- else }}
-              value: {{ .Values.database.host.value | quote }}
-              {{- end }}
-            - name: DB_USER
-              {{- if .Values.database.user.valueFrom }}
-              valueFrom:
-                {{- toYaml .Values.database.user.valueFrom | nindent 16 }}
-              {{- else }}
-              value: {{ .Values.database.user.value | quote }}
-              {{- end }}
-            - name: DB_PASS
-              {{- if .Values.database.password.valueFrom }}
-              valueFrom:
-                {{- toYaml .Values.database.password.valueFrom | nindent 16 }}
-              {{- else }}
-              value: {{ .Values.database.password.value | quote }}
-              {{- end }}
-            - name: POSTGRES_URL
-              value: "postgresql://$(DB_USER):$(DB_PASS)@$(DB_HOST):$(DB_PORT)/$(POSTGRES_DATABASE)?connect_timeout=20"
-          args:
-            - -c
-            - |
-              while true; do
-                if PGPASSWORD="${DB_PASS}" psql -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${POSTGRES_DATABASE}" -c "SELECT 1" > /dev/null 2>&1; then
-                  echo "PostgreSQL connection successful"
-                  exit 0
-                else
-                  echo "PostgreSQL connection failed"
-                  exit 1
-                fi
-                sleep 10
-              done
